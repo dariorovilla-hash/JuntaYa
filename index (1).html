@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JuntaYa</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#F4F7FA;--card:#fff;--ink:#14213D;--mut:#5B6779;--line:#DDE3EA;--sun:#FFB703;--ok:#128C7E;--bad:#D6452B;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1626;--card:#17233A;--ink:#EDF1F7;--mut:#9AA7BB;--line:#2A3955;--ok:#3CC9B8;--bad:#FF7A5F;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1626;--card:#17233A;--ink:#EDF1F7;--mut:#9AA7BB;--line:#2A3955;--ok:#3CC9B8;--bad:#FF7A5F;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Bricolage Grotesque",system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:2.4rem;font-weight:800;margin:0;letter-spacing:-.03em}
+h1 span{background:var(--sun);color:#14213D;padding:0 .18em;border-radius:.2em}
+h2{font-size:1.25rem;margin:24px 0 8px}
+p.s{color:var(--mut);margin:4px 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.row{display:flex;align-items:center;gap:10px}.sp{justify-content:space-between}.g{flex:1}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px}
+button.p{background:var(--sun);color:#14213D;border-color:var(--sun);font-weight:600}
+button.l{border:0;background:none;color:var(--mut);padding:4px 8px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+label{display:block;font-weight:600;margin:12px 0 4px}
+a.btn{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:9px 14px;color:inherit}a.btn.p{background:var(--sun);color:#14213D;border-color:var(--sun);font-weight:600}
+.don{width:170px;height:170px;border-radius:50%;margin:10px auto;position:relative}.don::after{content:"";position:absolute;inset:34px;background:var(--card);border-radius:50%}.dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px}
+@media print{button,select,.tabs,.noprint,a.btn{display:none!important}body{background:#fff;color:#000}}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:14px;overflow-x:auto}
+.tabs button{border:0;border-radius:0;background:none;color:var(--mut);padding:10px 12px;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--sun);font-weight:600}
+.amt{font-weight:800;font-variant-numeric:tabular-nums}.pos{color:var(--ok)}.neg{color:var(--bad)}
+.mut{color:var(--mut);font-size:.9rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{margin:0;font-weight:400;display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}.chips input{width:auto}
+.bar{height:10px;background:var(--sun);border-radius:5px;min-width:3px}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);width:min(520px,94vw);padding:18px}
+dialog::backdrop{background:#0008}
+.pay{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.emp{text-align:center;color:var(--mut);padding:28px 8px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<script>
+/* ==========================================================================
+   >>>>>>>>>>  CONFIGURACIÓN DE FIREBASE DE JUNTAYA (proyecto juntaya-476a2)  <<<<<<<<<<
+   Consola de Firebase > Configuración del proyecto > Tus apps > App web >
+   "Configuración del SDK" > Config. Sustituye cada "PEGA_AQUI" por tu valor.
+   Obligatorios: apiKey, authDomain, projectId y appId (los otros dos son
+   opcionales). Si falta alguno, JuntaYa funciona en modo local y te dice cuál.
+   ========================================================================== */
+const firebaseConfig={
+  apiKey:"AIzaSyAAd0TDLECqNq_XwU-ocJx5xThGfgzrLl8",
+  authDomain:"juntaya-476a2.firebaseapp.com",
+  projectId:"juntaya-476a2",
+  storageBucket:"juntaya-476a2.firebasestorage.app",
+  messagingSenderId:"624567279475",
+  appId:"1:624567279475:web:9f184b0cecdbb322396f06"
+};
+/* ========================  FIN DE LA CONFIGURACIÓN  ======================== */
+const FB_MISSING=['apiKey','authDomain','projectId','appId'].filter(k=>!firebaseConfig[k]||/PEGA_AQUI/.test(firebaseConfig[k]));
+const FIREBASE_OK=!FB_MISSING.length;
+</script>
+<script>
+const CATS={casa:'🏠 Casa',comida:'🍽️ Comida',viaje:'✈️ Viaje',regalo:'🎁 Regalo',ocio:'🎉 Ocio',otro:'🧾 Otro'};
+let S={groups:[],cur:null,tab:'gastos',simp:true,month:''};
+try{const r=localStorage.getItem('juntaya');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem('juntaya',JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const eur=c=>(c/100).toLocaleString('es-ES',{style:'currency',currency:'EUR'});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const G=()=>S.groups.find(g=>g.id===S.cur);
+const nm=(g,id)=>(g.members.find(m=>m.id===id)||{name:'?'}).name;
+
+// Reparto en céntimos sin perder ninguno
+function shares(e){const n=e.split.length,b=Math.floor(e.amount/n),r=e.amount-b*n;const o={};e.split.forEach((id,i)=>o[id]=b+(i<r?1:0));return o}
+function net(g){const n={};g.members.forEach(m=>n[m.id]=0);g.expenses.forEach(e=>{n[e.payer]=(n[e.payer]||0)+e.amount;const s=shares(e);for(const k in s)n[k]=(n[k]||0)-s[k]});return n}
+function simplified(g){const n=net(g),c=[],d=[];for(const k in n){if(n[k]>0)c.push([k,n[k]]);else if(n[k]<0)d.push([k,-n[k]])}
+ c.sort((a,b)=>b[1]-a[1]);d.sort((a,b)=>b[1]-a[1]);const out=[];let i=0,j=0;
+ while(i<c.length&&j<d.length){const x=Math.min(c[i][1],d[j][1]);out.push({from:d[j][0],to:c[i][0],amt:x});c[i][1]-=x;d[j][1]-=x;if(!c[i][1])i++;if(!d[j][1])j++}return out}
+function direct(g){const p={};g.expenses.forEach(e=>{const s=shares(e);for(const k in s){if(k===e.payer)continue;const key=k+'>'+e.payer,rev=e.payer+'>'+k;p[key]=(p[key]||0)+s[k]}});
+ const out=[],seen={};for(const key in p){const[a,b]=key.split('>'),rk=b+'>'+a;if(seen[key]||seen[rk])continue;seen[key]=seen[rk]=1;const v=p[key]-(p[rk]||0);if(v>0)out.push({from:a,to:b,amt:v});else if(v<0)out.push({from:b,to:a,amt:-v})}return out}
+
+function render(){const a=$('app');S.cur&&G()?group(a):home(a);save();const g=G();if(g){watch(g);sync()}}
+function home(a){
+ a.innerHTML=`<h1>Junta<span>Ya</span></h1><p class="s">Reparte gastos y deudas sin discusiones: pisos, viajes, cenas y regalos.</p>
+ <p class="row" style="flex-wrap:wrap"><button class="p" onclick="newGroup()">+ Crear grupo</button><button onclick="joinDlg()">🔗 Unirme con código</button></p>
+ ${S.groups.length?S.groups.map(g=>{const t=g.expenses.filter(e=>!e.pago).reduce((s,e)=>s+e.amount,0);return `<div class="card row sp" style="cursor:pointer" onclick="openG('${g.id}')" tabindex="0" onkeydown="if(event.key==='Enter')openG('${g.id}')"><div class="g"><b>${esc(g.emoji)} ${esc(g.name)}</b><div class="mut">${esc(g.kind||'Grupo')} · ${g.members.length} personas · ${g.expenses.length} gastos</div></div><span class="amt">${eur(t)}</span></div>`}).join(''):'<div class="emp">Aún no hay grupos.<br>Crea el primero, por ejemplo «Viaje a Madrid».</div>'}
+ <p class="mut" style="margin-top:28px">${DB?'☁️ Sincronización activa':'📴 Modo local (sin sincronización)'}${FBERR?`<br><b class="neg">${esc(FBERR)}</b><br>`:' · '}<button class="l" onclick="demo()">Cargar ejemplo</button><button class="l" onclick="theme()">Cambiar tema</button></p>`}
+function theme(){const r=document.documentElement,d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=d?'light':'dark'}
+function openG(id){S.cur=id;S.tab='gastos';render()}
+function back(){S.cur=null;render()}
+function group(a){const g=G();
+ a.innerHTML=`<div class="row"><button class="l" onclick="back()" aria-label="Volver">←</button><h1 style="font-size:1.7rem" class="g">${esc(g.emoji)} ${esc(g.name)}</h1><button class="l" onclick="invite()">🔗 Invitar</button><button class="l" onclick="delG()">Borrar</button></div>
+ <div class="mut" style="margin:6px 0">${g.members.map(m=>esc(m.name)).join(', ')} <button class="l" onclick="addMember()">+ persona</button></div>
+ <div class="tabs" role="tablist">${[['gastos','Gastos'],['balance','Balance'],['rec','Recurrentes'],['stats','Estadísticas']].map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" onclick="S.tab='${k}';render()">${l}</button>`).join('')}</div>
+ ${S.tab==='gastos'||S.tab==='stats'?msel(g):''}<div id="tab"></div>
+ <p class="row noprint" style="flex-wrap:wrap;margin-top:28px"><button onclick="csv()">💾 Exportar CSV</button><button onclick="try{print()}catch(e){alert('Usa Ctrl+P para imprimir o guardar en PDF')}">🖨️ Imprimir / PDF</button></p>`;
+ ({gastos:tGastos,balance:tBalance,rec:tRec,stats:tStats})[S.tab](g,$('tab'))}
+
+function tGastos(g,t){
+ t.innerHTML=`<p><button class="p" onclick="expForm()">+ Añadir gasto</button></p>`+
+ (mex(g).length?[...mex(g)].reverse().map(e=>`<div class="card row sp"><div class="g"><b>${esc(e.title)}</b> ${e.rec?'🔁':''}<div class="mut">${e.pago?'✅ Pago':CATS[e.cat]||''} · paga ${esc(nm(g,e.payer))} · entre ${e.split.length===g.members.length?'todos':e.split.map(i=>esc(nm(g,i))).join(', ')} · ${e.date}</div></div><div style="text-align:right"><div class="amt">${eur(e.amount)}</div><button class="l" onclick="expForm(false,'${e.id}')">Editar</button><button class="l" onclick="delExp('${e.id}')">Quitar</button></div></div>`).join(''):'<div class="emp">Sin gastos todavía. Añade el primero.</div>')}
+
+function tBalance(g,t){const n=net(g),list=S.simp?simplified(g):direct(g);
+ t.innerHTML=mine(g)+`<h2>Saldo de cada persona</h2>`+g.members.map(m=>{const v=n[m.id]||0;return `<div class="card row sp"><span>${esc(m.name)}</span><span class="amt ${v>0?'pos':v<0?'neg':''}">${v>0?'recibe ':v<0?'debe ':''}${eur(Math.abs(v))}</span></div>`}).join('')+
+ `<div class="row sp"><h2>Quién paga a quién</h2><button class="${S.simp?'p':''}" onclick="S.simp=!S.simp;render()">${S.simp?'✓ Deudas simplificadas':'Simplificar deudas'}</button></div>
+ <p class="mut">${list.length} ${list.length===1?'pago':'pagos'}${S.simp?' (mínimo posible)':' (sin simplificar)'}.</p>`+
+ (list.length?list.map(p=>`<div class="card row sp" style="flex-wrap:wrap"><span class="g"><b>${esc(nm(g,p.from))}</b> paga a <b>${esc(nm(g,p.to))}</b></span><span class="amt">${eur(p.amt)}</span><button onclick="pay('${p.from}','${p.to}',${p.amt})">✅ Marcar como pagado</button></div>`).join(''):'<div class="emp">✅ Todo en paz. Nadie debe nada.</div>')+
+ (list.length?`<p class="row" style="flex-wrap:wrap"><a class="btn p" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(summ())}">📱 Compartir por WhatsApp</a><button onclick="copySum()">Copiar resumen</button></p>`:'')}
+function copySum(){const g=G(),l=simplified(g).map(p=>`${nm(g,p.from)} → ${nm(g,p.to)}: ${eur(p.amt)}`).join('\n');try{navigator.clipboard.writeText(`${g.name}\n${l}`);alert('Resumen copiado')}catch(e){alert(l)}}
+
+function summ(){const g=G(),l=simplified(g).map(p=>`${nm(g,p.from)} → ${nm(g,p.to)}: ${eur(p.amt)}`).join('\n');return `💰 ${g.name}\n${l}\n\nCalculado con JuntaYa`}
+function mine(g){
+ if(!g.me||!g.members.some(m=>m.id===g.me))return `<div class="card"><label for="who" style="margin-top:0">¿Quién eres en este grupo?</label><select id="who" onchange="G().me=this.value;render()"><option value="">Elige tu nombre</option>${g.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select></div>`;
+ const l=simplified(g),a=l.filter(p=>p.to===g.me),b=l.filter(p=>p.from===g.me);
+ return `<div class="row sp"><h2>Te deben</h2><button class="l" onclick="G().me='';render()">Soy ${esc(nm(g,g.me))} · cambiar</button></div>`+(a.length?a.map(p=>`<div class="card row sp"><span><b>${esc(nm(g,p.from))}</b> te debe</span><span class="amt pos">${eur(p.amt)}</span></div>`).join(''):'<p class="mut">Nadie te debe nada.</p>')+`<h2>Tú debes</h2>`+(b.length?b.map(p=>`<div class="card row sp"><span>Debes a <b>${esc(nm(g,p.to))}</b></span><span class="amt neg">${eur(p.amt)}</span></div>`).join(''):'<p class="mut">No debes nada a nadie.</p>')}
+function tRec(g,t){const seen={};const rs=[...g.expenses].reverse().filter(e=>e.rec&&!seen[e.title]&&(seen[e.title]=1));
+ const tot=rs.reduce((s,e)=>s+e.amount,0),per={};g.members.forEach(m=>per[m.id]=0);rs.forEach(e=>{const s=shares(e);for(const k in s)per[k]+=s[k]});
+ t.innerHTML=`<p class="s">Alquiler, luz, internet… Marca un gasto como recurrente y repítelo cada mes con un toque.</p>`+(g.kind==='Piso'?`<div class="card"><b>🏠 Modo piso</b><div class="mut" style="margin:4px 0 8px">Añade cada gasto fijo una vez; después lo registras cada mes con un toque y verás lo que toca a cada compañero.</div><div class="chips">${['Alquiler','Electricidad','Agua','Internet','Comida','Limpieza','Otros'].map(n=>`<button onclick="expForm(true,null,'${n}')">${rs.some(e=>e.title===n)?'✓ ':'+ '}${n}</button>`).join('')}</div></div>`:'')+
+ (rs.length?`<div class="card"><b>Total mensual: ${eur(tot)}</b>${g.members.map(m=>`<div class="row sp mut"><span>${esc(m.name)}</span><span class="amt">${eur(per[m.id])}/mes</span></div>`).join('')}</div>`+
+ rs.map(e=>`<div class="card row sp"><div class="g"><b>${esc(e.title)}</b><div class="mut">paga ${esc(nm(g,e.payer))}</div></div><span class="amt">${eur(e.amount)}</span><button class="p" onclick="repeat('${e.id}')">Registrar este mes</button></div>`).join(''):'<div class="emp">No hay gastos recurrentes.</div>')+
+ `<p><button class="p" onclick="expForm(true)">+ Nuevo recurrente</button></p>`}
+function repeat(id){const g=G(),e=g.expenses.find(x=>x.id===id);g.expenses.push({...e,id:uid(),date:today()});S.tab='gastos';render()}
+
+const CC={casa:'#128C7E',comida:'#FFB703',viaje:'#3A7BD5',regalo:'#D6452B',ocio:'#8E5BD6',otro:'#8A94A6'};
+function donut(cat,tot){let a=0;const st=Object.entries(cat).sort((x,y)=>y[1]-x[1]),seg=st.map(([k,v])=>{const s=a;a+=v/tot*100;return `${CC[k]||'#8A94A6'} ${s}% ${a}%`}).join(',');
+ return `<div class="don" role="img" aria-label="Gasto por categoría" style="background:conic-gradient(${seg})"></div>`+st.map(([k,v])=>`<div class="row sp" style="margin:6px 0"><span class="row"><i class="dot" style="background:${CC[k]||'#8A94A6'}"></i>${CATS[k]}</span><span><b class="amt">${eur(v)}</b> <span class="mut">${Math.round(v/tot*100)}%</span></span></div>`).join('')}
+function tStats(g0,t){const g={...g0,expenses:g0.expenses.filter(e=>!e.pago&&(!S.month||e.date.startsWith(S.month)))};const tot=g.expenses.reduce((s,e)=>s+e.amount,0);if(!tot){t.innerHTML='<div class="emp">Añade gastos para ver estadísticas.</div>';return}
+ const paid={},own={},cat={};g.members.forEach(m=>paid[m.id]=own[m.id]=0);
+ g.expenses.forEach(e=>{paid[e.payer]+=e.amount;const s=shares(e);for(const k in s)own[k]+=s[k];cat[e.cat]=(cat[e.cat]||0)+e.amount});
+ const mx=Math.max(...Object.values(cat)),mo=new Date().toISOString().slice(0,7),mm=g.expenses.filter(e=>e.date.startsWith(mo)).reduce((s,e)=>s+e.amount,0);
+ t.innerHTML=`<div class="card"><div class="mut">Total del grupo</div><div class="amt" style="font-size:2rem">${eur(tot)}</div><div class="mut">Este mes: ${eur(mm)} · media por persona: ${eur(Math.round(tot/g.members.length))}</div></div>
+ <h2>Por categoría</h2>${donut(cat,tot)}
+ <h2>Quién ha puesto y quién consume</h2>${g.members.map(m=>`<div class="card row sp"><b>${esc(m.name)}</b><span class="mut">pagó ${eur(paid[m.id])} · le corresponde ${eur(own[m.id])}</span></div>`).join('')}`}
+
+const today=()=>new Date().toISOString().slice(0,10);
+function newGroup(){const d=$('dlg');d.innerHTML=`<form method="dialog" onsubmit="return mkGroup(this)"><h2 style="margin-top:0">Nuevo grupo</h2>
+ <label>Nombre</label><input name="n" required placeholder="Viaje a Madrid" maxlength="40">
+ <label>Tipo de grupo</label><select name="k" onchange="this.form.e.value=this.value">${[['🏠','Piso'],['✈️','Viaje'],['🍽️','Cena'],['👨‍👩‍👧','Familia'],['🎉','Fiesta']].map(([e,n])=>`<option value="${e}">${e} ${n}</option>`).join('')}</select><label>Emoji (puedes cambiarlo)</label><input name="e" value="🏠" maxlength="10">
+ <label>Personas (separadas por comas)</label><input name="m" required placeholder="Juan, Pedro, Ana, Luis">
+ <p class="row"><button type="button" onclick="dlg.close()">Cancelar</button><button class="p g">Crear grupo</button></p></form>`;d.showModal()}
+function mkGroup(f){const ms=[...new Set(f.m.value.split(',').map(s=>s.trim()).filter(Boolean))];if(ms.length<2){alert('Añade al menos dos personas.');return false}
+ const g={id:uid(),name:f.n.value.trim(),emoji:f.e.value||'👥',kind:f.k.options[f.k.selectedIndex].text.replace(/^\S+\s/,''),members:ms.map(n=>({id:uid(),name:n})),expenses:[]};S.groups.push(g);S.cur=g.id;S.tab=g.kind==='Piso'?'rec':'gastos';dlg.close();render();return false}
+const BASE=location.origin+location.pathname;
+let DB=null,FBERR='';const lastJ={},subs={};
+const gref=c=>DB.collection('groups').doc(c);
+const rcode=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(6);crypto.getRandomValues(b);return[...b].map(x=>A[x%32]).join('')};
+const canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort()):v);
+const strip=g=>{const{me,id,...r}=g;return r};
+function watch(g){if(!g.code||!DB||subs[g.code])return;subs[g.code]=gref(g.code).onSnapshot(s=>{if(!s.exists||s.metadata.hasPendingWrites)return;const d=s.data(),j=canon(d);if(j===lastJ[g.code])return;lastJ[g.code]=j;const l=S.groups.find(x=>x.code===g.code);if(l){Object.assign(l,d);render()}},()=>{})}
+function sync(){const g=G();if(!g||!g.code||!DB||lastJ[g.code]===undefined)return;const j=canon(strip(g));if(lastJ[g.code]!==j){lastJ[g.code]=j;gref(g.code).set(JSON.parse(j)).catch(()=>alert('No se pudo sincronizar. Comprueba tu conexión y vuelve a intentarlo.'))}}
+const NOCLOUD='Compartir grupos no está disponible: falta configurar Firebase o no hay conexión. Puedes seguir usando JuntaYa en modo local.';
+function joinDlg(){const d=$('dlg');d.innerHTML=`<form method="dialog" onsubmit="joinCode(this.c.value);return false"><h2 style="margin-top:0">Unirme a un grupo</h2><label>Código del grupo</label><input name="c" required placeholder="JY-K7M2QX" maxlength="12" autocapitalize="characters"><p class="row"><button type="button" onclick="dlg.close()">Cancelar</button><button class="p g">Unirme</button></p></form>`;d.showModal()}
+async function joinCode(c){c=String(c).trim().toUpperCase();if(!/^JY-[A-Z0-9]{6}$/.test(c)){alert('El código debe tener el formato JY-XXXXXX');return}if(!DB){alert(NOCLOUD);return}
+ const ex=S.groups.find(g=>g.code===c);if(ex){dlg.close();openG(ex.id);return}
+ try{const s=await gref(c).get();if(!s.exists){alert('No existe ningún grupo con el código '+c);return}
+ const d=s.data();lastJ[c]=canon(d);S.groups.push({...d,id:c,code:c,me:''});S.cur=c;S.tab='balance';dlg.close();render()}catch(e){alert('No se pudo entrar al grupo. Revisa el código y tus permisos.')}}
+async function invite(){const g=G();if(!DB){alert(NOCLOUD);return}
+ if(!g.code){let c;for(let i=0;i<5;i++){c='JY-'+rcode();try{if(!(await gref(c).get()).exists)break}catch(e){break}}g.code=c;lastJ[c]='';render()}
+ const l=BASE+'#'+g.code,m=`Únete a «${g.name}» en JuntaYa 👇\nCódigo: ${g.code}\n${l}`,d=$('dlg');
+ d.innerHTML=`<h2 style="margin-top:0">Invitar personas</h2><p>Comparte este código o enlace. Quien lo use entra al mismo grupo y ve los gastos al instante.</p><div class="card amt" style="font-size:1.8rem;text-align:center">${g.code}</div><p class="row" style="flex-wrap:wrap"><a class="btn p" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(m)}">📱 Enviar por WhatsApp</a><button onclick="copyL('${l}',this)">Copiar enlace</button><button onclick="dlg.close()">Cerrar</button></p><p class="mut">Cualquiera con el código puede entrar y editar el grupo: compártelo solo con quien quieras.</p>`;d.showModal()}
+function copyL(l,b){try{navigator.clipboard.writeText(l);b.textContent='✓ Enlace copiado'}catch(e){}}
+function pay(f,t,a){const g=G();if(!confirm(`¿Marcar como pagados ${eur(a)} de ${nm(g,f)} a ${nm(g,t)}?`))return;g.expenses.push({id:uid(),title:`Pago: ${nm(g,f)} → ${nm(g,t)}`,amount:a,payer:f,split:[t],cat:'pago',rec:false,date:today(),pago:true});render()}
+const mex=g=>g.expenses.filter(e=>!S.month||e.date.startsWith(S.month));
+function msel(g){const ms=[...new Set([today().slice(0,7),...g.expenses.map(e=>e.date.slice(0,7))])].sort().reverse();
+ return `<div class="row noprint" style="margin-top:12px"><label for="mes" style="margin:0">Mes</label><select id="mes" style="width:auto" onchange="S.month=this.value;render()"><option value="">Todos los meses</option>${ms.map(m=>{const n=new Date(m+'-01T12:00:00').toLocaleDateString('es-ES',{month:'long',year:'numeric'});return `<option value="${m}" ${S.month===m?'selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`}).join('')}</select></div>`}
+function csv(){const g=G(),q=s=>'"'+String(s).replace(/"/g,'""')+'"',r=[['Fecha','Concepto','Categoría','Importe (€)','Pagado por','Compartido entre']].concat(mex(g).map(e=>[e.date,e.title,e.pago?'Pago':(CATS[e.cat]||'').replace(/^\S+\s/,''),(e.amount/100).toFixed(2).replace('.',','),nm(g,e.payer),e.split.map(i=>nm(g,i)).join(', ')]));
+ const name='juntaya-'+g.name.replace(/\W+/g,'-')+'.csv',blob=new Blob(['\ufeff'+r.map(x=>x.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+ catch(e){try{navigator.share({files:[new File([blob],name,{type:'text/csv'})]})}catch(e2){alert('No se pudo descargar el archivo. Prueba desde un navegador de escritorio.')}}}
+function addMember(){const n=prompt('Nombre de la persona');if(n&&n.trim()){G().members.push({id:uid(),name:n.trim()});render()}}
+function delG(){if(confirm('¿Borrar este grupo y todos sus gastos?')){S.groups=S.groups.filter(g=>g.id!==S.cur);S.cur=null;render()}}
+function delExp(id){const g=G();g.expenses=g.expenses.filter(e=>e.id!==id);render()}
+function expForm(rec,eid,pre){const g=G(),d=$('dlg'),x=eid?g.expenses.find(e=>e.id===eid):null;
+ d.innerHTML=`<form method="dialog" onsubmit="return mkExp(this)"><h2 style="margin-top:0">${rec?'Gasto recurrente':'Nuevo gasto'}</h2>
+ <label>Concepto</label><input name="t" required placeholder="Hotel" maxlength="50">
+ <label>Importe (€)</label><input name="a" required type="number" step="0.01" min="0.01" inputmode="decimal">
+ <label>Pagado por</label><select name="p">${g.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select>
+ <label>Compartido entre</label><div class="chips">${g.members.map(m=>`<label><input type="checkbox" name="s" value="${m.id}" checked>${esc(m.name)}</label>`).join('')}</div>
+ <label>Categoría</label><select name="c">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+ <label class="pay" style="font-weight:400"><input type="checkbox" name="r" style="width:auto" ${rec?'checked':''}> Se repite cada mes</label>
+ <p class="row"><button type="button" onclick="dlg.close()">Cancelar</button><button class="p g">Guardar gasto</button></p></form>`;
+ if(x){const f=d.querySelector('form');f.t.value=x.title;f.a.value=x.amount/100;f.p.value=x.payer;f.c.value=x.cat;f.r.checked=!!x.rec;f.querySelectorAll('[name=s]').forEach(i=>i.checked=x.split.includes(i.value));f.dataset.eid=x.id;d.querySelector('h2').textContent='Editar gasto'}else if(pre){const f=d.querySelector('form');f.t.value=pre;f.c.value=pre==='Comida'?'comida':'casa'}
+ d.showModal()}
+function mkExp(f){const g=G(),sp=[...f.querySelectorAll('[name=s]:checked')].map(i=>i.value);if(!sp.length){alert('Elige al menos una persona.');return false}
+ const o={title:f.t.value.trim(),amount:Math.round(parseFloat(f.a.value)*100),payer:f.p.value,split:sp,cat:f.c.value,rec:f.r.checked},ex=f.dataset.eid&&g.expenses.find(e=>e.id===f.dataset.eid);if(ex)Object.assign(ex,o);else g.expenses.push({id:uid(),date:today(),...o});
+ dlg.close();S.tab='gastos';render();return false}
+function demo(){const ids=['juan','pedro','ana','luis'].map(n=>[n,uid()]),m=n=>ids.find(i=>i[0]===n)[1],all=ids.map(i=>i[1]);
+ const e=(t,a,p,c,rec)=>({id:uid(),title:t,amount:a*100,payer:m(p),split:all,cat:c,rec:!!rec,date:today()});
+ S.groups.push({id:uid(),name:'Viaje a Madrid',emoji:'✈️',kind:'Viaje',members:ids.map(i=>({id:i[1],name:i[0][0].toUpperCase()+i[0].slice(1)})),
+ expenses:[e('Hotel',400,'pedro','viaje'),e('Cena',120,'juan','comida'),e('Gasolina',80,'ana','viaje'),e('Entradas museo',60,'pedro','ocio'),e('Internet casa',30,'luis','casa',1)]});render()}
+render();
+const FBHINT={
+ 'auth/operation-not-allowed':'La autenticación anónima no está activada: Firebase > Authentication > Método de acceso > Anónimo > Habilitar.',
+ 'auth/admin-restricted-operation':'La autenticación anónima no está activada: Firebase > Authentication > Método de acceso > Anónimo > Habilitar.',
+ 'auth/unauthorized-domain':'Dominio no autorizado: Firebase > Authentication > Configuración > Dominios autorizados > añade "'+location.hostname+'".',
+ 'auth/invalid-api-key':'La apiKey de firebaseConfig no es válida. Revisa que la hayas copiado entera.',
+ 'auth/api-key-not-valid':'La apiKey de firebaseConfig no es válida. Revisa que la hayas copiado entera.',
+ 'auth/configuration-not-found':'Authentication no está iniciado en el proyecto: Firebase > Authentication > Comenzar.',
+ 'auth/network-request-failed':'No hay conexión con Firebase (red o bloqueador de contenido).',
+ 'auth/operation-not-supported-in-this-environment':'Abre la web desde https:// o localhost, no con doble clic (file://).',
+ 'fs/permission-denied':'Las reglas de Firestore no permiten leer: pega y publica las reglas en Firestore > Reglas.',
+ 'fs/*':'Firestore no responde: comprueba que creaste la base de datos (Firebase > Firestore Database > Crear base de datos) y que el projectId es correcto.'
+};
+function fbfail(e){const c=(e&&e.code)||'';FBERR=(FBHINT[c]||(c.startsWith('fs/')&&FBHINT['fs/*'])||(e&&e.message)||'Error desconocido')+(c?' ['+c+']':'');DB=null;console.warn('JuntaYa funciona en modo local:',e)}
+(async()=>{
+ try{
+  if(location.protocol==='file:')throw{code:'auth/operation-not-supported-in-this-environment'};
+  if(!FIREBASE_OK)throw{message:'Falta rellenar en firebaseConfig: '+FB_MISSING.join(', ')+'.'};
+  if(!window.firebase)throw{message:'No se pudo cargar el SDK de Firebase (¿sin internet o bloqueador de contenido?).'};
+  firebase.initializeApp(firebaseConfig);
+  DB=firebase.firestore();
+  try{await DB.enablePersistence({synchronizeTabs:true})}catch(e){}
+  await firebase.auth().signInAnonymously();
+  try{await Promise.race([gref('JY-PRUEBA').get(),new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),10000))])}
+  catch(e){if(navigator.onLine)throw{code:'fs/'+((e&&e.code)||'error')}}
+ }catch(e){fbfail(e)}
+ if(DB){await Promise.all(S.groups.filter(g=>g.code).map(g=>gref(g.code).get().then(s=>{lastJ[g.code]=s.exists?canon(s.data()):'';if(s.exists)Object.assign(g,s.data())}).catch(()=>{})));}
+ render();
+ const h=location.hash.slice(1).toUpperCase();if(/^JY-[A-Z0-9]{6}$/.test(h)){if(DB)joinCode(h);else alert(NOCLOUD)}})();
+</script>
+</body>
+</html>
